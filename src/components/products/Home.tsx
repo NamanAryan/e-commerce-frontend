@@ -31,27 +31,32 @@ interface Product {
   category: string;
 }
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchFeaturedProduct = async () => {
+    const fetchFeaturedProducts = async () => {
       try {
         const response = await fetch('https://fakestoreapi.com/products');
-        const products = await response.json();
-        // Randomly select a product
-        const randomProduct = products[Math.floor(Math.random() * products.length)];
-        setFeaturedProduct(randomProduct);
+        const products: Product[] = await response.json();
+        // Randomly select two products
+        const randomProducts: Product[] = [];
+        for (let i = 0; i < 2; i++) {
+          const randomIndex = Math.floor(Math.random() * products.length);
+          randomProducts.push(products[randomIndex]);
+          products.splice(randomIndex, 1);
+        }
+        setFeaturedProducts(randomProducts);
       } catch (error) {
-        console.error('Error fetching featured product:', error);
+        console.error('Error fetching featured products:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFeaturedProduct();
+    fetchFeaturedProducts();
   }, []);
 
   return (
@@ -159,7 +164,7 @@ const HomePage = () => {
         </Grid>
       </Container>
 
-      {/* Featured Product Section */}
+      {/* Featured Products Section */}
       <Box sx={{ bgcolor: 'grey.50', py: 8 }}>
         <Container maxWidth="lg">
           <Typography 
@@ -168,106 +173,116 @@ const HomePage = () => {
             align="center"
             sx={{ mb: 6, fontWeight: 600 }}
           >
-            Featured Product
+            Featured Products
           </Typography>
 
-          {loading ? (
-            <Skeleton variant="rectangular" height={400} />
-          ) : featuredProduct && (
-            <Card 
-              sx={{ 
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                overflow: 'hidden',
-                boxShadow: 3,
-                cursor: 'pointer',
-                transition: 'transform 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'scale(1.02)'
-                }
-              }}
-              onClick={() => navigate(`/product/${featuredProduct.id}`)}
-            >
-              <Box 
-                sx={{ 
-                  width: { xs: '100%', md: '50%' },
-                  p: 4,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'white'
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  image={featuredProduct.image}
-                  alt={featuredProduct.title}
+          <Grid container spacing={4}>
+            {loading ? (
+              <>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" height={400} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" height={400} />
+                </Grid>
+              </>
+            ) : featuredProducts.map((product: Product) => (
+              <Grid item xs={12} sm={6} key={product.id}>
+                <Card 
                   sx={{
-                    width: '100%',
-                    maxHeight: 400,
-                    objectFit: 'contain'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    boxShadow: 3,
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'scale(1.02)'
+                    }
                   }}
-                />
-              </Box>
-              
-              <CardContent 
-                sx={{ 
-                  width: { xs: '100%', md: '50%' },
-                  p: 4,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center'
-                }}
-              >
-                <Typography 
-                  variant="overline" 
-                  color="primary"
-                  sx={{ mb: 1 }}
+                  onClick={() => navigate(`/product/${product.id}`)}
                 >
-                  Featured Product
-                </Typography>
-                <Typography 
-                  variant="h4" 
-                  component="h3"
-                  sx={{ mb: 2, fontWeight: 600 }}
-                >
-                  {featuredProduct.title}
-                </Typography>
-                <Typography 
-                  color="text.secondary"
-                  sx={{ mb: 3 }}
-                >
-                  {featuredProduct.description}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Rating value={featuredProduct.rating.rate} readOnly />
-                  <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
-                    ({featuredProduct.rating.count} reviews)
-                  </Typography>
-                </Box>
+                  <Box 
+                    sx={{ 
+                      width: '100%',
+                      p: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'white'
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      image={product.image}
+                      alt={product.title}
+                      sx={{
+                        width: '100%',
+                        maxHeight: 400,
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </Box>
+                  
+                  <CardContent 
+                    sx={{ 
+                      p: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Typography 
+                      variant="overline" 
+                      color="primary"
+                      sx={{ mb: 1 }}
+                    >
+                      Featured Product
+                    </Typography>
+                    <Typography 
+                      variant="h5" 
+                      component="h3"
+                      sx={{ mb: 2, fontWeight: 600 }}
+                    >
+                      {product.title}
+                    </Typography>
+                    <Typography 
+                      color="text.secondary"
+                      sx={{ mb: 3 }}
+                    >
+                      {product.description}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Rating value={product.rating.rate} readOnly />
+                      <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
+                        ({product.rating.count} reviews)
+                      </Typography>
+                    </Box>
 
-                <Typography 
-                  variant="h5" 
-                  color="primary"
-                  sx={{ mb: 3, fontWeight: 600 }}
-                >
-                  ${featuredProduct.price}
-                </Typography>
+                    <Typography 
+                      variant="h6" 
+                      color="primary"
+                      sx={{ mb: 3, fontWeight: 600 }}
+                    >
+                      ${product.price}
+                    </Typography>
 
-                <Button 
-                  variant="contained" 
-                  size="large"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Add to cart logic
-                  }}
-                >
-                  Add to Cart
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                    <Button 
+                      variant="contained" 
+                      size="large"
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        e.stopPropagation();
+                        // Add to cart logic
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
         </Container>
       </Box>
     </Box>
