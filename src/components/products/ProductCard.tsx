@@ -1,12 +1,7 @@
-// src/components/ProductCard.tsx
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import { Rating } from '@mui/material';
+import { useState } from "react";
+import { Rating } from "@mui/material";
+import { useNavigate } from 'react-router-dom';
+
 
 interface ProductCardProps {
   id: number;
@@ -20,107 +15,78 @@ interface ProductCardProps {
   };
 }
 
-const ProductCard = ({ title, price, description, image, rating }: ProductCardProps) => {
+const ProductCard = ({ id, title, price, image, rating }: ProductCardProps) => {
+  const [, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/product/${id}`);
+  };
+
   return (
-    <Card 
-      sx={{ 
-        height: '100%',
-        display: 'flex', 
-        flexDirection: 'column',
-        position: 'relative',
-        transition: 'transform 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 3
-        },
-        m: 2,
-        borderRadius: 2
-      }}
+    <div
+      onClick={handleCardClick}
+      className="relative group cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <Box sx={{ height: 180, p: 2, bgcolor: '#f8f9fa' }}>
-        <CardMedia
-          component="img"
-          image={image}
-          alt={title}
-          sx={{
-            height: '100%',
-            width: '100%',
-            objectFit: 'contain',
-          }}
-        />
-      </Box>
-
-      <CardContent sx={{ p: 3, pb: 1 }}>
-        <Typography 
-          variant="h6" 
-          component="h2" 
-          sx={{
-            fontWeight: 600,
-            fontSize: '1rem',
-            mb: 1,
-            lineHeight: 1.4,
-            minHeight: '2.8em',
-          }}
-        >
-          {title}
-        </Typography>
-
-        <Typography 
-          variant="body2" 
-          color="text.secondary"
-          sx={{
-            fontSize: '0.875rem',
-            mb: 2,
-            minHeight: '3em',
-          }}
-        >
-          {description.length > 100 ? `${description.substring(0, 100)}...` : description}
-        </Typography>
-
-        <Typography 
-          variant="h6" 
-          color="primary" 
-          sx={{ 
-            fontWeight: 700,
-            fontSize: '1.25rem',
-            mb: 1
-          }}
-        >
-          ${price.toFixed(2)}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Rating 
-            value={rating.rate} 
-            precision={0.1} 
-            size="small" 
-            readOnly 
+      <div className="relative w-full rounded-lg overflow-hidden bg-white shadow-md transform transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl">
+        {/* Image Container */}
+        <div className="relative h-48 w-full bg-gray-100 p-4">
+          <img
+            src={image}
+            alt={title}
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110"
           />
-          <Typography variant="body2" color="text.secondary">
-            ({rating.count})
-          </Typography>
-        </Box>
-      </CardContent>
+        </div>{" "}
+        {/* Closing the image container div */}
+        {/* Content */}
+        <div className="p-4">
+          {/* Title */}
+          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
+            {title}
+          </h3>
 
-      <CardActions sx={{ p: 2, pt: 0, mt: 'auto' }}>
-        <Button 
-          variant="contained" 
-          fullWidth 
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            py: 1,
-            boxShadow: 'none',
-            '&:hover': {
-              boxShadow: 'none'
-            }
-          }}
-        >
-          Add to Cart
-        </Button>
-      </CardActions>
-    </Card>
+          {/* Rating */}
+          <div className="flex items-center space-x-1 mb-2">
+            <Rating value={rating.rate} precision={0.1} size="small" readOnly />
+            <span className="text-sm text-gray-500">({rating.count})</span>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-indigo-600">
+              ${price.toFixed(2)}
+            </span>
+
+            {/* Add to Cart Button */}
+            <button
+              className="relative inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full 
+             overflow-hidden transition-all duration-300 ease-in-out 
+             hover:bg-indigo-700 hover:shadow-lg hover:scale-105 
+             group focus:outline-none"
+            >
+              <span className="relative text-sm font-semibold transform transition-transform duration-300 group-hover:translate-x-1">
+                Add to Cart
+              </span>
+
+              <svg
+                className="w-4 h-4 transform transition-all duration-300 
+               group-hover:translate-x-1 group-hover:scale-110"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
-
 export default ProductCard;

@@ -11,6 +11,7 @@ import Products from "./components/products/ProductList";
 import Layout from "./components/common/layout";
 import "./index.css";
 import { SearchProvider } from "./context/SearchContext";
+import ProductDetails from "./components/products/ProductDetail";
 
 const Cart = () => <div>Cart Page Coming Soon</div>;
 const Orders = () => <div>Orders Page Coming Soon</div>;
@@ -36,13 +37,21 @@ const App = () => {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            
+
             {/* Protected Routes */}
             <Route
               path="/"
               element={
                 <ProtectedRoute>
                   <Products />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product/:id"
+              element={
+                <ProtectedRoute>
+                  <ProductDetails />
                 </ProtectedRoute>
               }
             />
@@ -62,7 +71,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            
+
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
