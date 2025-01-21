@@ -11,6 +11,7 @@ import Products from "./components/products/ProductList";
 import Layout from "./components/common/layout";
 import "./index.css";
 import { SearchProvider } from "./context/SearchContext";
+import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
 
 const Cart = () => <div>Cart Page Coming Soon</div>;
@@ -41,6 +42,14 @@ const App = () => {
             {/* Protected Routes */}
             <Route
               path="/"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products"
               element={
                 <ProtectedRoute>
                   <Products />
