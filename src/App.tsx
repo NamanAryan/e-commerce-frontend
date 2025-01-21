@@ -1,9 +1,9 @@
-// App.tsx
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import Login from "./components/auth/login";
 import Register from "./components/auth/register";
@@ -13,9 +13,21 @@ import "./index.css";
 import { SearchProvider } from "./context/SearchContext";
 import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
+import { useEffect, useState } from "react";
 
 const Cart = () => <div>Cart Page Coming Soon</div>;
 const Orders = () => <div>Orders Page Coming Soon</div>;
+
+const isTokenValid = (token: string | null): boolean => {
+  if (!token) return false;
+  try {
+    const decodedToken = JSON.parse(atob(token.split(".")[1])); 
+    const isExpired = decodedToken.exp * 1000 < Date.now(); 
+    return !isExpired;
+  } catch {
+    return false; 
+  }
+};
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -23,67 +35,60 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const token = localStorage.getItem("token");
-  if (!token) {
-    return <Navigate to="/login" />;
+  if (!isTokenValid(token)) {
+    return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
 };
 
+const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = () => setHasError(true);
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) {
+    return <div>Something went wrong. Please try again later.</div>;
+  }
+
+  return <>{children}</>;
+};
+
+// Main App Component
 const App = () => {
   return (
     <Router>
       <SearchProvider>
         <Layout>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+          <ErrorBoundary>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/products"
-              element={
-                <ProtectedRoute>
-                  <Products />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/product/:id"
-              element={
-                <ProtectedRoute>
-                  <ProductDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute>
-                  <Cart />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Outlet />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Home />} />
+                <Route path="products" element={<Products />} />
+                <Route path="product/:id" element={<ProductDetails />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="orders" element={<Orders />} />
+              </Route>
 
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ErrorBoundary>
         </Layout>
       </SearchProvider>
     </Router>
