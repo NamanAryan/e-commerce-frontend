@@ -7,8 +7,10 @@ import {
 import Login from "./components/auth/login";
 import Register from "./components/auth/register";
 import Products from "./components/products/ProductList";
-import './index.css'  
+import Layout from "./components/common/layout"; // Import Layout
+import './index.css'
 
+// Placeholder components
 const Cart = () => <div>Cart Page Coming Soon</div>;
 const Orders = () => <div>Orders Page Coming Soon</div>;
 
@@ -29,12 +31,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 const App = () => {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <Layout> {/* Wrap everything in Layout */}
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          
           {/* Protected Routes */}
           <Route
             path="/"
@@ -60,11 +62,11 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
+          
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </div>
+      </Layout>
     </Router>
   );
 };
