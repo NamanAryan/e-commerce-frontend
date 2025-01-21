@@ -1,9 +1,8 @@
-// src/components/ProductList.tsx
+// src/components/products/ProductList.tsx
 import { useState, useEffect } from 'react';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import ProductCard from './ProductCard';  // Import the card component
+import { Grid, Box } from '@mui/material';
+import ProductCard from './ProductCard';
+import SearchBar from '../common/SearchBar';
 
 interface Product {
   id: number;
@@ -19,47 +18,31 @@ interface Product {
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchProducts();
+    fetch('https://fakestoreapi.com/products')
+      .then(res => res.json())
+      .then(data => setProducts(data))
+      .catch(error => console.error('Error fetching products:', error));
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch('https://fakestoreapi.com/products');
-      if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
-      setProducts(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching products');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const filteredProducts = products.filter(product =>
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Grid container spacing={3}>
-        {products.map((product) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-            <ProductCard {...product} />
-          </Grid>
-        ))}
-      </Grid>
+    <Box>
+      <SearchBar setSearchQuery={setSearchQuery} />
+      <Box sx={{ padding: 3 }}>
+        <Grid container spacing={3}>
+          {filteredProducts.map((product) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+              <ProductCard {...product} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
     </Box>
   );
 };

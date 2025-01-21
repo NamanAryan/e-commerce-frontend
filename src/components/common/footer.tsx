@@ -80,13 +80,13 @@ import {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <LocationOn color="inherit" />
                   <Typography variant="body2">
-                    123 Shopping Street, NY 10001, USA
+                    123 Shopping Street, Mumbai, India
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Phone color="inherit" />
                   <Typography variant="body2">
-                    +1 234 567 8900
+                    +91 8451861353
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

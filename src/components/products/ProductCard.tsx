@@ -1,3 +1,4 @@
+// src/components/ProductCard.tsx
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
@@ -23,7 +24,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
   return (
     <Card 
       sx={{ 
-        height: '100%', // Changed from fixed height to 100%
+        height: '100%',
         display: 'flex', 
         flexDirection: 'column',
         position: 'relative',
@@ -36,7 +37,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
         borderRadius: 2
       }}
     >
-      <Box sx={{ height: 180, p: 2, backgroundColor: '#f8f9fa' }}>
+      <Box sx={{ height: 180, p: 2, bgcolor: '#f8f9fa' }}>
         <CardMedia
           component="img"
           image={image}
@@ -49,7 +50,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
         />
       </Box>
 
-      <CardContent sx={{ p: 3, pb: 1 }}> {/* Reduced bottom padding */}
+      <CardContent sx={{ p: 3, pb: 1 }}>
         <Typography 
           variant="h6" 
           component="h2" 
@@ -58,7 +59,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
             fontSize: '1rem',
             mb: 1,
             lineHeight: 1.4,
-            minHeight: '2.8em',  // Ensure consistent height for title
+            minHeight: '2.8em',
           }}
         >
           {title}
@@ -70,7 +71,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
           sx={{
             fontSize: '0.875rem',
             mb: 2,
-            minHeight: '3em',  // Ensure consistent height for description
+            minHeight: '3em',
           }}
         >
           {description.length > 100 ? `${description.substring(0, 100)}...` : description}
@@ -101,7 +102,7 @@ const ProductCard = ({ title, price, description, image, rating }: ProductCardPr
         </Box>
       </CardContent>
 
-      <CardActions sx={{ p: 2, pt: 0, mt: 'auto' }}> {/* Added mt: 'auto' */}
+      <CardActions sx={{ p: 2, pt: 0, mt: 'auto' }}>
         <Button 
           variant="contained" 
           fullWidth 
