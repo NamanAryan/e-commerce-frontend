@@ -1,8 +1,8 @@
 // src/components/products/ProductList.tsx
-import { useState, useEffect } from 'react';
-import { Grid, Box } from '@mui/material';
-import ProductCard from './ProductCard';
-import SearchBar from '../common/SearchBar';
+import { useState, useEffect } from "react";
+import { Grid, Box } from "@mui/material";
+import ProductCard from "./ProductCard";
+import SearchBar from "../common/SearchBar";
 
 interface Product {
   id: number;
@@ -18,16 +18,16 @@ interface Product {
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch('https://fakestoreapi.com/products')
-      .then(res => res.json())
-      .then(data => setProducts(data))
-      .catch(error => console.error('Error fetching products:', error));
+    fetch("https://fakestoreapi.com/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data))
+      .catch((error) => console.error("Error fetching products:", error));
   }, []);
 
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = products.filter((product) =>
     product.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
