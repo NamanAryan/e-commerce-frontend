@@ -1,71 +1,52 @@
-// src/components/Cart.tsx
-import { useEffect } from 'react';
-import { Container, Card, Typography, Button, Box } from '@mui/material';
+import { Container, Card, Typography, Button, Box, IconButton } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 import { useCart } from '../../context/CartContext';
 
 const Cart = () => {
-  const { cart, removeFromCart, updateQuantity, getCartTotal, getMyCart } = useCart();
-
-  useEffect(() => {
-    getMyCart();
-  }, [getMyCart]);
+  const { cart, removeFromCart, updateQuantity, getCartTotal, clearAllCart } = useCart();
 
   return (
     <Container sx={{ py: 4 }}>
-      {cart.map((item, index) => (  // Added index
-        <Card 
-          // Using multiple properties to create a unique key
-          key={`cart-item-${item.productId}-${index}`}  
-          sx={{ p: 2, mb: 2, display: 'flex', gap: 2 }}
-        >
-          <Box sx={{ width: 100, height: 100, overflow: 'hidden' }}>
-            <img 
-              src={item.image} 
-              alt={item.title} 
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'contain' 
-              }} 
-            />
-          </Box>
-
-          <Box sx={{ flex: 1 }}>
+      {cart.map((item) => (
+        <Card key={item.productId} sx={{ p: 2, mb: 2, display: 'flex', gap: 2 }}>
+          <img 
+            src={item.image} 
+            alt={item.title} 
+            style={{ width: 100, objectFit: 'contain' }} 
+          />
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6">{item.title}</Typography>
             <Typography color="primary">${item.price}</Typography>
             
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 'auto' }}>
               <Button 
-                size="small" 
-                variant="outlined"
+                size="small"
                 onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
               >
                 -
               </Button>
-              
               <Typography>{item.quantity}</Typography>
-              
               <Button 
-                size="small" 
-                variant="outlined"
+                size="small"
                 onClick={() => updateQuantity(item.productId, item.quantity + 1)}
               >
                 +
               </Button>
-
-              <Button 
-                variant="outlined" 
-                color="error"
+              
+              <IconButton 
+                color="error" 
                 onClick={() => removeFromCart(item.productId)}
+                size="small"
               >
-                Remove
-              </Button>
+                <DeleteIcon />
+              </IconButton>
             </Box>
           </Box>
         </Card>
       ))}
 
-      {cart.length > 0 ? (
+      {cart.length > 0 && (
         <Box sx={{ 
           mt: 4, 
           p: 3, 
@@ -75,14 +56,31 @@ const Cart = () => {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <Typography variant="h5">
-            Total: ${getCartTotal().toFixed(2)}
-          </Typography>
-          <Button variant="contained" color="primary" size="large">
+          <Box>
+            <Typography variant="h5">
+              Total: ${getCartTotal().toFixed(2)}
+            </Typography>
+            <Button
+              startIcon={<ClearAllIcon />}
+              color="error"
+              onClick={clearAllCart}
+              sx={{ mt: 1 }}
+            >
+              Clear Cart
+            </Button>
+          </Box>
+          
+          <Button 
+            variant="contained" 
+            color="primary" 
+            size="large"
+          >
             Checkout
           </Button>
         </Box>
-      ) : (
+      )}
+
+      {cart.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="text.secondary">
             Your cart is empty

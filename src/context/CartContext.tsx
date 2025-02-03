@@ -17,6 +17,7 @@ interface CartContextType {
   getCartTotal: () => number;
   clearCart: () => void;
   getMyCart: () => Promise<void>;
+  clearAllCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -52,11 +53,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const addToCart = async (item: CartItem) => {
-    setLoading(true); // Start loading
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
-
-      // First get current cart
       const currentCartResponse = await fetch(
         "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
         {
@@ -65,41 +64,40 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           },
         }
       );
-
+  
       const currentCartData = await currentCartResponse.json();
-      let existingItems =
-        currentCartData.success && currentCartData.cart
-          ? currentCartData.cart.items
-          : [];
-
-      // Check if item already exists
-      const existingItemIndex = existingItems.findIndex(
-        (i: { productId: string }) => i.productId === item.productId
+      let currentItems = currentCartData.success && currentCartData.cart 
+        ? currentCartData.cart.items 
+        : [];
+  
+      // Find if item already exists in cart
+      const existingItemIndex = currentItems.findIndex(
+        (        i: { productId: string; }) => i.productId === item.productId.toString()
       );
-
+  
       let updatedItems;
-      if (existingItemIndex > -1) {
-        // Update quantity if item exists
-        updatedItems = existingItems.map(
-          (existingItem: { quantity: number }, index: any) =>
-            index === existingItemIndex
-              ? {
-                  ...existingItem,
-                  quantity: existingItem.quantity + item.quantity,
-                }
-              : existingItem
-        );
+      if (existingItemIndex !== -1) {
+        // Update quantity of existing item
+        updatedItems = currentItems.map((currentItem: { quantity: number; }, index: any) => {
+          if (index === existingItemIndex) {
+            return {
+              ...currentItem,
+              quantity: currentItem.quantity + 1
+            };
+          }
+          return currentItem;
+        });
       } else {
-        // Add new item if it doesn't exist
-        updatedItems = [...existingItems, item];
+        // Add new item
+        updatedItems = [...currentItems, { ...item, quantity: 1 }];
       }
-
+  
       const totalPrice = updatedItems.reduce(
-        (sum: number, i: { price: number; quantity: number }) =>
-          sum + i.price * i.quantity,
+        (sum: number, i: { price: number; quantity: number; }) => sum + (i.price * i.quantity),
         0
       );
-
+  
+      // Send updated cart to server
       const response = await fetch(
         "https://e-commerce-hfbs.onrender.com/api/cart/add_cart",
         {
@@ -110,25 +108,25 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           },
           body: JSON.stringify({
             items: updatedItems,
-            totalPrice,
+            totalPrice
           }),
         }
       );
-
-      const data = await response.json();
-
+  
       if (!response.ok) {
-        throw new Error(data.message || "Add to cart failed");
+        throw new Error("Add to cart failed");
       }
-
-      await getMyCart(); 
+  
+      // Update local cart state
+      await getMyCart();
+  
     } catch (error) {
       console.error("Error adding to cart:", error);
-      throw error;
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
+  
   const removeFromCart = async (productId: string) => {
     try {
       const token = localStorage.getItem("token");
@@ -179,6 +177,42 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       setCart(updatedItems);
     } catch (error) {
       console.error("Error removing from cart:", error);
+    }
+  };
+
+  const clearAllCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const cartResponse = await fetch(
+        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const cartData = await cartResponse.json();
+      if (!cartData.success || !cartData.cart) {
+        throw new Error("Cart not found");
+      }
+  
+      const response = await fetch(
+        `https://e-commerce-hfbs.onrender.com/api/cart/delete_cart/${cartData.cart._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Failed to clear cart");
+      }
+  
+      setCart([]);
+    } catch (error) {
+      console.error("Error clearing cart:", error);
     }
   };
 
@@ -255,6 +289,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         getCartTotal,
         clearCart,
         getMyCart,
+        clearAllCart,
       }}
     >
       {children}
