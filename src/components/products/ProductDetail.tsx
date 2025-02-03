@@ -9,13 +9,13 @@ import {
   Button,
   Rating,
   IconButton,
-  TextField,
   Breadcrumbs,
   Link,
+  CircularProgress,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useCart } from "../../context/CartContext";
 
 interface Product {
   id: number;
@@ -35,7 +35,8 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity] = useState(1);
+  const { addToCart, loading: cartLoading } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -52,24 +53,22 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]);
 
-  const handleIncrement = () => {
-    setQuantity((prev) => prev + 1);
-  };
+  const handleAddToCart = async () => {
+    if (!product) return;
 
-  const handleDecrement = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-  };
+    try {
+      await addToCart({
+        productId: product.id.toString(),
+        title: product.title,
+        image: product.image,
+        quantity: quantity,
+        price: product.price,
+      });
 
-  const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(event.target.value);
-    if (!isNaN(value) && value >= 1) {
-      setQuantity(value);
+      navigate("/products");
+    } catch (error) {
+      console.error("Cart error:", error);
     }
-  };
-
-  const handleAddToCart = () => {
-    // Add to cart logic here
-    console.log(`Adding ${quantity} of ${product?.title} to cart`);
   };
 
   if (loading) {
@@ -80,7 +79,7 @@ const ProductDetails = () => {
         alignItems="center"
         minHeight="80vh"
       >
-        <Typography>Loading...</Typography>
+        <CircularProgress />
       </Box>
     );
   }
@@ -197,74 +196,6 @@ const ProductDetails = () => {
               {product.description}
             </Typography>
 
-            {/* Quantity Selector */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                Quantity
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  width: "fit-content",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  p: 0.5,
-                }}
-              >
-                <IconButton
-                  onClick={handleDecrement}
-                  size="small"
-                  sx={{
-                    bgcolor: "grey.100",
-                    "&:hover": { bgcolor: "grey.200" },
-                  }}
-                >
-                  <RemoveIcon />
-                </IconButton>
-
-                <TextField
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  type="number"
-                  inputProps={{
-                    min: 1,
-                    style: {
-                      textAlign: "center",
-                      width: "50px",
-                      padding: "8px",
-                      MozAppearance: "textfield",
-                    },
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": { border: "none" },
-                    },
-                  
-                    "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                      {
-                        WebkitAppearance: "none",
-                        margin: 0,
-                      },
-                  }}
-                />
-
-                <IconButton
-                  onClick={handleIncrement}
-                  size="small"
-                  sx={{
-                    bgcolor: "grey.100",
-                    "&:hover": { bgcolor: "grey.200" },
-                  }}
-                >
-                  <AddIcon />
-                </IconButton>
-              </Box>
-            </Box>
-
-            {/* Total Price */}
             <Typography
               variant="h6"
               sx={{
@@ -272,9 +203,7 @@ const ProductDetails = () => {
                 fontWeight: 600,
                 color: "primary.main",
               }}
-            >
-              Total: ${(product.price * quantity).toFixed(2)}
-            </Typography>
+            ></Typography>
 
             <Box sx={{ mt: "auto" }}>
               <Button
@@ -282,6 +211,7 @@ const ProductDetails = () => {
                 size="large"
                 fullWidth
                 onClick={handleAddToCart}
+                disabled={cartLoading}
                 sx={{
                   py: 2,
                   textTransform: "none",
@@ -292,7 +222,11 @@ const ProductDetails = () => {
                   },
                 }}
               >
-                Add {quantity} to Cart
+                {cartLoading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  `Add ${quantity} to Cart`
+                )}
               </Button>
             </Box>
           </Box>
