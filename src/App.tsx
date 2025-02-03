@@ -11,21 +11,20 @@ import Products from "./components/products/ProductList";
 import Layout from "./components/common/layout";
 import "./index.css";
 import { SearchProvider } from "./context/SearchContext";
+import { CartProvider } from "./context/CartContext"; 
 import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
 import { useEffect, useState } from "react";
-
-const Cart = () => <div>Cart Page Coming Soon</div>;
-const Orders = () => <div>Orders Page Coming Soon</div>;
+import Cart from "./components/cart/CartPage";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
   try {
-    const decodedToken = JSON.parse(atob(token.split(".")[1])); 
-    const isExpired = decodedToken.exp * 1000 < Date.now(); 
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    const isExpired = decodedToken.exp * 1000 < Date.now();
     return !isExpired;
   } catch {
-    return false; 
+    return false;
   }
 };
 
@@ -41,7 +40,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   return <>{children}</>;
 };
 
-const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -61,36 +62,55 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const App = () => {
   return (
     <Router>
-      <SearchProvider>
-        <Layout>
-          <ErrorBoundary>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+      <CartProvider>
+        <SearchProvider>
+          <Layout>
+            <ErrorBoundary>
+              <Routes>
+                <Route
+                  path="/login"
+                  element={
+                    localStorage.getItem("token") ? (
+                      <Navigate to="/" />
+                    ) : (
+                      <Login />
+                    )
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    localStorage.getItem("token") ? (
+                      <Navigate to="/" />
+                    ) : (
+                      <Register />
+                    )
+                  }
+                />
 
-              {/* Protected Routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Outlet />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Home />} />
-                <Route path="products" element={<Products />} />
-                <Route path="product/:id" element={<ProductDetails />} />
-                <Route path="cart" element={<Cart />} />
-                <Route path="orders" element={<Orders />} />
-              </Route>
+                {/* Protected Routes */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Outlet />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Home />} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="product/:id" element={<ProductDetails />} />
+                  <Route path="cart" element={<Cart />} />
+                  {/* <Route path="orders" element={<Orders />} /> */}
+                </Route>
 
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ErrorBoundary>
-        </Layout>
-      </SearchProvider>
+                {/* Catch all route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </ErrorBoundary>
+          </Layout>
+        </SearchProvider>
+      </CartProvider>
     </Router>
   );
 };

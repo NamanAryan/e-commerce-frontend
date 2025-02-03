@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { Rating } from "@mui/material";
-import { useNavigate } from 'react-router-dom';
-
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
 
 interface ProductCardProps {
   id: number;
@@ -16,63 +15,66 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ id, title, price, image, rating }: ProductCardProps) => {
-  const [, setIsHovered] = useState(false);
   const navigate = useNavigate();
+  const { addToCart } = useCart(); 
 
-  const handleCardClick = () => {
-    navigate(`/product/${id}`);
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await addToCart({
+        productId: id.toString(),
+        title: title,
+        image: image,
+        quantity: 1,
+        price: price,
+      });
+    } catch (error) {
+      console.error("Cart error:", error);
+    }
   };
 
   return (
     <div
-      onClick={handleCardClick}
+      onClick={() => navigate(`/product/${id}`)}
       className="relative group cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative w-full rounded-lg overflow-hidden bg-white shadow-md transform transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl">
-        {/* Image Container */}
         <div className="relative h-48 w-full bg-gray-100 p-4">
           <img
             src={image}
             alt={title}
             className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110"
           />
-        </div>{" "}
-        {/* Closing the image container div */}
-        {/* Content */}
+        </div>
+
         <div className="p-4">
-          {/* Title */}
           <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
             {title}
           </h3>
 
-          {/* Rating */}
           <div className="flex items-center space-x-1 mb-2">
             <Rating value={rating.rate} precision={0.1} size="small" readOnly />
             <span className="text-sm text-gray-500">({rating.count})</span>
           </div>
 
-          {/* Price */}
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-indigo-600">
               ${price.toFixed(2)}
             </span>
 
-            {/* Add to Cart Button */}
             <button
-              className="relative inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full 
-             overflow-hidden transition-all duration-300 ease-in-out 
-             hover:bg-indigo-700 hover:shadow-lg hover:scale-105 
-             group focus:outline-none"
+              onClick={handleAddToCart}
+              className="relative inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full
+                overflow-hidden transition-all duration-300 ease-in-out
+                hover:bg-indigo-700 hover:shadow-lg hover:scale-105
+                group focus:outline-none"
             >
               <span className="relative text-sm font-semibold transform transition-transform duration-300 group-hover:translate-x-1">
                 Add to Cart
               </span>
-
               <svg
-                className="w-4 h-4 transform transition-all duration-300 
-               group-hover:translate-x-1 group-hover:scale-110"
+                className="w-4 h-4 transform transition-all duration-300
+                  group-hover:translate-x-1 group-hover:scale-110"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -89,4 +91,5 @@ const ProductCard = ({ id, title, price, image, rating }: ProductCardProps) => {
     </div>
   );
 };
+
 export default ProductCard;
