@@ -11,11 +11,13 @@ import Products from "./components/products/ProductList";
 import Layout from "./components/common/layout";
 import "./index.css";
 import { SearchProvider } from "./context/SearchContext";
-import { CartProvider } from "./context/CartContext"; 
+import { CartProvider } from "./context/CartContext";
 import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
 import { useEffect, useState } from "react";
 import Cart from "./components/cart/CartPage";
+import CategoryPage from "./components/categories/CategoryPage";
+import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -101,7 +103,9 @@ const App = () => {
                   <Route path="products" element={<Products />} />
                   <Route path="product/:id" element={<ProductDetails />} />
                   <Route path="cart" element={<Cart />} />
-                  {/* <Route path="orders" element={<Orders />} /> */}
+                  <Route path="categories" element={<CategoryPage />} />
+                  <Route path="/category/:id" element={<SpecificCategoryPage />} />
+                  
                 </Route>
 
                 {/* Catch all route */}

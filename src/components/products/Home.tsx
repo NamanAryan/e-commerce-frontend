@@ -41,7 +41,6 @@ const HomePage: React.FC = () => {
       try {
         const response = await fetch("https://fakestoreapi.com/products");
         const products: Product[] = await response.json();
-        // Randomly select two products
         const randomProducts: Product[] = [];
         for (let i = 0; i < 2; i++) {
           const randomIndex = Math.floor(Math.random() * products.length);
