@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+// src/context/CartContext.tsx
+import { createContext, useContext, useState, useEffect } from "react";
 
 interface CartItem {
   productId: string;
@@ -10,135 +11,159 @@ interface CartItem {
 
 interface CartContextType {
   cart: CartItem[];
-  loading: boolean; // Add loading state
+  loading: boolean;
   addToCart: (item: CartItem) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   getCartTotal: () => number;
   clearCart: () => void;
   getMyCart: () => Promise<void>;
-  clearAllCart: () => void;
+  clearAllCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const API_BASE_URL = "https://e-commerce-hfbs.onrender.com/api";
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Initialize cart on mount and token change
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      getMyCart();
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "token") {
+        if (e.newValue) {
+          getMyCart();
+        } else {
+          setCart([]);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const handleApiError = (error: any) => {
+    console.error("API Error:", error);
+    const errorMessage = error?.response?.data?.message || error.message || "An error occurred";
+    alert(errorMessage); // Using alert instead of toast for now
+  };
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Please login to continue");
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  };
+
   const getMyCart = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/cart/my_cart`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch cart");
+      }
 
       const data = await response.json();
-
       if (data.success && data.cart?.items) {
         setCart(data.cart.items);
       } else {
         setCart([]);
       }
     } catch (error) {
-      console.error("Error fetching cart:", error);
-      setCart([]);
+      handleApiError(error);
     }
   };
 
   const addToCart = async (item: CartItem) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const currentCartResponse = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
+      // Get current cart
+      const currentCartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!currentCartResponse.ok) {
+        throw new Error("Failed to fetch current cart");
+      }
+
       const currentCartData = await currentCartResponse.json();
-      let currentItems = currentCartData.success && currentCartData.cart 
+      const currentItems = currentCartData.success && currentCartData.cart 
         ? currentCartData.cart.items 
         : [];
-  
-      // Find if item already exists in cart
+
+      // Check if item exists
       const existingItemIndex = currentItems.findIndex(
-        (        i: { productId: string; }) => i.productId === item.productId.toString()
+        (i: { productId: string }) => i.productId === item.productId.toString()
       );
-  
+
       let updatedItems;
       if (existingItemIndex !== -1) {
-        // Update quantity of existing item
-        updatedItems = currentItems.map((currentItem: { quantity: number; }, index: any) => {
+        updatedItems = currentItems.map((currentItem: CartItem, index: number) => {
           if (index === existingItemIndex) {
             return {
               ...currentItem,
-              quantity: currentItem.quantity + 1
+              quantity: currentItem.quantity + 1,
             };
           }
           return currentItem;
         });
       } else {
-        // Add new item
         updatedItems = [...currentItems, { ...item, quantity: 1 }];
       }
-  
+
       const totalPrice = updatedItems.reduce(
-        (sum: number, i: { price: number; quantity: number; }) => sum + (i.price * i.quantity),
+        (sum: number, i: CartItem) => sum + i.price * i.quantity,
         0
       );
-  
-      // Send updated cart to server
-      const response = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/add_cart",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            items: updatedItems,
-            totalPrice
-          }),
-        }
-      );
-  
+
+      // Update cart on server
+      const response = await fetch(`${API_BASE_URL}/cart/add_cart`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          items: updatedItems,
+          totalPrice,
+        }),
+      });
+
       if (!response.ok) {
-        throw new Error("Add to cart failed");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add to cart");
       }
-  
-      // Update local cart state
+
       await getMyCart();
-  
+      console.log("Item added to cart successfully");
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      handleApiError(error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const removeFromCart = async (productId: string) => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      // First get the current cart
-      const cartResponse = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!cartResponse.ok) {
+        throw new Error("Failed to fetch cart");
+      }
 
       const cartData = await cartResponse.json();
       if (!cartData.success || !cartData.cart) {
@@ -146,22 +171,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const updatedItems = cartData.cart.items.filter(
-        (item: { productId: string }) => item.productId !== productId
+        (item: CartItem) => item.productId !== productId
       );
+
       const updatedTotalPrice = updatedItems.reduce(
-        (total: number, item: { price: number; quantity: number }) =>
-          total + item.price * item.quantity,
+        (total: number, item: CartItem) => total + item.price * item.quantity,
         0
       );
 
-      const updateResponse = await fetch(
-        `https://e-commerce-hfbs.onrender.com/api/cart/delete_cart/${cartData.cart._id}`,
+      const response = await fetch(
+        `${API_BASE_URL}/cart/delete_cart/${cartData.cart._id}`,
         {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             items: updatedItems,
             totalPrice: updatedTotalPrice,
@@ -169,93 +191,56 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         }
       );
 
-      if (!updateResponse.ok) {
+      if (!response.ok) {
         throw new Error("Failed to remove item");
       }
 
-      // Update local state
       setCart(updatedItems);
+      console.log("Item removed from cart");
     } catch (error) {
-      console.error("Error removing from cart:", error);
-    }
-  };
-
-  const clearAllCart = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const cartResponse = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const cartData = await cartResponse.json();
-      if (!cartData.success || !cartData.cart) {
-        throw new Error("Cart not found");
-      }
-  
-      const response = await fetch(
-        `https://e-commerce-hfbs.onrender.com/api/cart/delete_cart/${cartData.cart._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (!response.ok) {
-        throw new Error("Failed to clear cart");
-      }
-  
-      setCart([]);
-    } catch (error) {
-      console.error("Error clearing cart:", error);
+      handleApiError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateQuantity = async (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      alert("Quantity cannot be less than 1");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const cartResponse = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/cart/my_cart",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!cartResponse.ok) {
+        throw new Error("Failed to fetch cart");
+      }
 
       const cartData = await cartResponse.json();
       if (!cartData.success || !cartData.cart) {
         throw new Error("Cart not found");
       }
 
-      // Update quantity in items array
-      const updatedItems = cartData.cart.items.map(
-        (item: { productId: string }) =>
-          item.productId === productId
-            ? { ...item, quantity: newQuantity }
-            : item
+      const updatedItems = cartData.cart.items.map((item: CartItem) =>
+        item.productId === productId
+          ? { ...item, quantity: newQuantity }
+          : item
       );
 
-      // Calculate new total price
       const updatedTotalPrice = updatedItems.reduce(
-        (total: number, item: { price: number; quantity: number }) =>
-          total + item.price * item.quantity,
+        (total: number, item: CartItem) => total + item.price * item.quantity,
         0
       );
 
       const response = await fetch(
-        `https://e-commerce-hfbs.onrender.com/api/cart/update_cart/${cartData.cart._id}`,
+        `${API_BASE_URL}/cart/update_cart/${cartData.cart._id}`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             items: updatedItems,
             totalPrice: updatedTotalPrice,
@@ -267,13 +252,49 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error("Failed to update quantity");
       }
 
-      // Update local state after successful server update
       setCart(updatedItems);
+      console.log("Cart updated");
     } catch (error) {
-      console.error("Error updating quantity:", error);
+      handleApiError(error);
+    } finally {
+      setLoading(false);
     }
   };
-  const getCartTotal = () =>
+
+  const clearAllCart = async () => {
+    setLoading(true);
+    try {
+      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
+        headers: getAuthHeaders(),
+      });
+
+      const cartData = await cartResponse.json();
+      if (!cartData.success || !cartData.cart) {
+        throw new Error("Cart not found");
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/cart/delete_cart/${cartData.cart._id}`,
+        {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to clear cart");
+      }
+
+      setCart([]);
+      console.log("Cart cleared");
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCartTotal = () => 
     cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
   const clearCart = () => setCart([]);
@@ -305,4 +326,4 @@ export const useCart = () => {
   return context;
 };
 
-export { CartContext };
+export default CartContext;

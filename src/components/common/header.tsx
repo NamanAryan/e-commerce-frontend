@@ -18,7 +18,6 @@ import {
   ShoppingCart,
   Person,
   Menu as MenuIcon,
-  Favorite,
   Logout,
 } from "@mui/icons-material";
 import { useCart } from "../../context/CartContext";
@@ -138,12 +137,7 @@ const Header = () => {
           </Box>
 
           {/* Right Icons */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton color="inherit">
-              <Badge badgeContent={0} color="primary">
-                <Favorite />
-              </Badge>
-            </IconButton>
+          
 
             <IconButton 
               color="inherit" 
@@ -237,7 +231,7 @@ const Header = () => {
                 Login
               </Button>
             )}
-          </Box>
+      
         </Toolbar>
       </Container>
     </AppBar>

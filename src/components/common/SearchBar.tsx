@@ -6,8 +6,7 @@ import {
   IconButton, 
   Box, 
   Container,
-  Select,
-  MenuItem,
+  
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -15,17 +14,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 interface SearchBarProps {
   setSearchQuery: (query: string) => void;
 }
-
-const flags = [
-    { code: 'us', flag: '🇺🇸', name: 'English (US)' },
-    { code: 'es', flag: '🇪🇸', name: 'Español' },
-    { code: 'fr', flag: '🇫🇷', name: 'Français' },
-    { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
-    { code: 'it', flag: '🇮🇹', name: 'Italiano' },
-    { code: 'cn', flag: '🇨🇳', name: '中文' },
-    { code: 'jp', flag: '🇯🇵', name: '日本語' },
-    { code: 'kr', flag: '🇰🇷', name: '한국어' }
-  ];
 
 const SearchBar = ({ setSearchQuery }: SearchBarProps) => {
   const [query, setQuery] = useState('');
