@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import Cart from "./components/cart/CartPage";
 import CategoryPage from "./components/categories/CategoryPage";
 import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
+import ProfilePage from "./components/profile/ProfilePage";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -104,6 +105,7 @@ const App = () => {
                   <Route path="product/:id" element={<ProductDetails />} />
                   <Route path="cart" element={<Cart />} />
                   <Route path="categories" element={<CategoryPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
                   <Route path="/category/:id" element={<SpecificCategoryPage />} />
                   
                 </Route>
