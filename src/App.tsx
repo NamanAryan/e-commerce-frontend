@@ -19,6 +19,9 @@ import Cart from "./components/cart/CartPage";
 import CategoryPage from "./components/categories/CategoryPage";
 import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
 import ProfilePage from "./components/profile/ProfilePage";
+import CheckoutPage from "./components/checkout/CheckoutPage";
+import OrderConfirmation from "./components/checkout/OrderConfirm";
+import OrdersPage from "./components/orders/OrderPage";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -107,6 +110,9 @@ const App = () => {
                   <Route path="categories" element={<CategoryPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="/category/:id" element={<SpecificCategoryPage />} />
+                  <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
+                  <Route path="checkout" element={<CheckoutPage />} />
+                  <Route path="orders" element={<OrdersPage />} />
                   
                 </Route>
 
