@@ -5,124 +5,117 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Login from "./components/auth/login";
 import Register from "./components/auth/register";
-import Products from "./components/products/ProductList";
-import Layout from "./components/common/layout";
-import "./index.css";
-import { SearchProvider } from "./context/SearchContext";
-import { CartProvider } from "./context/CartContext";
-import Home from "./components/products/Home";
-import ProductDetails from "./components/products/ProductDetail";
-import { useEffect, useState } from "react";
-import Cart from "./components/cart/CartPage";
-import CategoryPage from "./components/categories/CategoryPage";
-import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
-import ProfilePage from "./components/profile/ProfilePage";
-import CheckoutPage from "./components/checkout/CheckoutPage";
-import OrderConfirmation from "./components/checkout/OrderConfirm";
-import OrdersPage from "./components/orders/OrderPage";
+import Dashboard from "./components/auth/dashboard/dashboard";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
+  
+  // Check if token has the correct format (contains two dots)
+  if (!token.includes('.') || token.split('.').length !== 3) {
+    return false;
+  }
+  
   try {
-    const decodedToken = JSON.parse(atob(token.split(".")[1]));
-    const isExpired = decodedToken.exp * 1000 < Date.now();
-    return !isExpired;
-  } catch {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    
+    const decodedToken = JSON.parse(jsonPayload);
+    return decodedToken.exp * 1000 > Date.now();
+  } catch (error) {
+    console.error('Error validating token:', error);
     return false;
   }
 };
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = () => {
   const token = localStorage.getItem("token");
-  if (!isTokenValid(token)) {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
+  const isValid = isTokenValid(token);
+  return isValid ? <Outlet /> : <Navigate to="/login" replace />;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem("token");
+  const isValid = isTokenValid(token);
+  return isValid ? <Navigate to="/dashboard" replace /> : <>{children}</>;
 };
 
 const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [hasError, setHasError] = useState(false);
-
+  
   useEffect(() => {
     const handleError = () => setHasError(true);
     window.addEventListener("error", handleError);
     return () => window.removeEventListener("error", handleError);
   }, []);
-
+  
   if (hasError) {
     return <div>Something went wrong. Please try again later.</div>;
   }
-
+  
   return <>{children}</>;
 };
 
-// Main App Component
 const App = () => {
   return (
     <Router>
-      <CartProvider>
-        <SearchProvider>
-          <Layout>
-            <ErrorBoundary>
-              <Routes>
-                <Route
-                  path="/login"
-                  element={
-                    localStorage.getItem("token") ? (
-                      <Navigate to="/" />
-                    ) : (
-                      <Login />
-                    )
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    localStorage.getItem("token") ? (
-                      <Navigate to="/" />
-                    ) : (
-                      <Register />
-                    )
-                  }
-                />
-
-                {/* Protected Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Outlet />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Home />} />
-                  <Route path="products" element={<Products />} />
-                  <Route path="product/:id" element={<ProductDetails />} />
-                  <Route path="cart" element={<Cart />} />
-                  <Route path="categories" element={<CategoryPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="/category/:id" element={<SpecificCategoryPage />} />
-                  <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
-                  <Route path="checkout" element={<CheckoutPage />} />
-                  <Route path="orders" element={<OrdersPage />} />
-                  
-                </Route>
-
-                {/* Catch all route */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </Layout>
-        </SearchProvider>
-      </CartProvider>
+      <ErrorBoundary>
+        <Routes>
+          {/* Root Route - Check auth and redirect accordingly */}
+          <Route 
+            path="/" 
+            element={
+              isTokenValid(localStorage.getItem("token")) ? 
+                <Navigate to="/dashboard" replace /> : 
+                <Navigate to="/login" replace />
+            } 
+          />
+          
+          {/* Public Routes */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Add more protected routes here as needed */}
+          </Route>
+       
+          {/* Catch all - Redirect to login if not authenticated, dashboard if authenticated */}
+          <Route 
+            path="*" 
+            element={
+              isTokenValid(localStorage.getItem("token")) ? 
+                <Navigate to="/dashboard" replace /> : 
+                <Navigate to="/login" replace />
+            } 
+          />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 };

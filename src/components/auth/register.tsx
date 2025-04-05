@@ -32,7 +32,7 @@ const Register = () => {
 
     try {
       const response = await fetch(
-        "https://e-commerce-hfbs.onrender.com/api/users/register",
+        "http://localhost:3000/api/users/register",
         {
           method: "POST",
           headers: {
