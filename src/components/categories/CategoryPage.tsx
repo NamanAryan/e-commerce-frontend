@@ -184,12 +184,5 @@ const CategoryPage = () => {
   );
 };
 
-// This component is no longer needed as we've integrated its functionality directly into the CategoryPage
-// Leaving the interface here for reference
-interface CategoryCardProps {
-  id: number;
-  name: string;
-  image: string;
-}
 
 export default CategoryPage;
