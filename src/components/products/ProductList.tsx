@@ -148,7 +148,7 @@ const ProductList = () => {
     }).format(price);
   };
   
-  const addToCart = async (): Promise<boolean> => {
+  const addToCart = async (_productId: number): Promise<boolean> => {
     // Simulate API request with a small delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
