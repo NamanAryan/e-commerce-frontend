@@ -1,4 +1,3 @@
-// src/context/SearchContext.tsx
 import { createContext, useContext, useState } from 'react';
 
 interface SearchContextType {
