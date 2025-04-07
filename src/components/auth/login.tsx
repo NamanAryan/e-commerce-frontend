@@ -22,7 +22,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:3000/api/users/login",
+        "https://e-commerce-hfbs.onrender.com/api/users/login",
         {
           method: "POST",
           headers: {
@@ -45,7 +45,7 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         window.dispatchEvent(new Event("login"));
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (err) {
       setError(
