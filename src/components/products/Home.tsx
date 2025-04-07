@@ -234,44 +234,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {/* Newsletter Section */}
-      <div className="bg-indigo-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:flex lg:items-center lg:justify-between">
-            <div className="lg:w-1/2">
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
-                Join Our Newsletter
-              </h2>
-              <p className="text-lg text-gray-600 mb-4">
-                Stay updated with the latest products, special offers, and news from our store.
-              </p>
-            </div>
-            <div className="mt-8 lg:mt-0 lg:w-1/2">
-              <form className="sm:flex">
-                <label htmlFor="email-address" className="sr-only">Email address</label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="w-full px-5 py-3 placeholder-gray-500 focus:ring-indigo-500 focus:border-indigo-500 sm:max-w-xs border-gray-300 rounded-md"
-                  placeholder="Enter your email"
-                />
-                <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3 sm:flex-shrink-0">
-                  <button
-                    type="submit"
-                    className="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Subscribe
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+     
     </div>
   );
 };
