@@ -22,6 +22,7 @@ import ProfilePage from "./components/profile/ProfilePage";
 import CheckoutPage from "./components/checkout/CheckoutPage";
 import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
+import FavoritePage from "./components/cart/favoritesPage";
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -113,6 +114,7 @@ const App = () => {
                   <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
                   <Route path="checkout" element={<CheckoutPage />} />
                   <Route path="orders" element={<OrdersPage />} />
+                  <Route path="/favorites" element={<FavoritePage />} />
                   
                 </Route>
 
