@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Card, 
-  Typography, 
-  Button, 
-  Box, 
+import {
+  Container,
+  Grid,
+  Card,
+  Typography,
+  Button,
+  Box,
   TextField,
   CircularProgress,
-  Alert
+  Alert,
+  Divider
 } from '@mui/material';
 import { useCart } from '../../context/CartContext';
 
@@ -32,26 +34,20 @@ const CheckoutPage = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
+        if (!token) throw new Error('No authentication token found');
 
         const response = await fetch('https://e-commerce-hfbs.onrender.com/api/users/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
+
+        if (!response.ok) throw new Error('Failed to fetch user data');
 
         const { success, user } = await response.json();
-        
-        if (!success || !user) {
-          throw new Error('Invalid user data received');
-        }
+
+        if (!success || !user) throw new Error('Invalid user data received');
 
         setUserData({
           email: user.email || '',
@@ -90,43 +86,29 @@ const CheckoutPage = () => {
       };
 
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      if (!token) throw new Error('No authentication token found');
 
       const response = await fetch('https://e-commerce-hfbs.onrender.com/api/order/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(orderData)
       });
 
       const data = await response.json();
-      console.log('Order creation response:', data); // Debug log
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create order');
-      }
+      if (!response.ok) throw new Error(data.message || 'Failed to create order');
 
       if (data.success && data.order) {
-        
         await clearAllCart();
-        
-        const orderId = data.order._id;
-        console.log('Navigating to order confirmation with ID:', orderId); 
-        navigate(`/order-confirmation/${orderId}`);
+        navigate(`/order-confirmation/${data.order._id}`);
       } else {
         throw new Error('Failed to create order');
       }
     } catch (error) {
       console.error('Error submitting order:', error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An error occurred while processing your order.');
-      }
+      setError(error instanceof Error ? error.message : 'An error occurred while processing your order.');
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +116,7 @@ const CheckoutPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
         <CircularProgress />
       </Box>
     );
@@ -142,16 +124,11 @@ const CheckoutPage = () => {
 
   if (cart.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
+      <Box sx={{ textAlign: 'center', py: 6 }}>
         <Typography variant="h6" color="text.secondary">
           Your cart is empty
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={() => window.location.href = '/'}
-        >
+        <Button variant="contained" color="primary" sx={{ mt: 3 }} onClick={() => navigate('/')}>
           Continue Shopping
         </Button>
       </Box>
@@ -159,91 +136,88 @@ const CheckoutPage = () => {
   }
 
   return (
-    <Container sx={{ py: 4 }}>
-      <Typography variant="h4" sx={{ mb: 4 }}>
+    <Container sx={{ py: 5 }}>
+      <Typography variant="h4" gutterBottom>
         Checkout
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      {/* Order Summary */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Order Summary
-        </Typography>
-        {cart.map((item) => (
-          <Card key={item.productId} sx={{ p: 2, mb: 2, display: 'flex', gap: 2 }}>
-            <img
-              src={item.image}
-              alt={item.title}
-              style={{ width: 100, objectFit: 'contain' }}
-            />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6">{item.title}</Typography>
-              <Typography color="primary">${item.price}</Typography>
-              <Typography color="text.secondary">
-                Quantity: {item.quantity}
+      <Grid container spacing={4}>
+        {/* Left Column - Cart Summary */}
+        <Grid item xs={12} md={7}>
+          <Typography variant="h6" gutterBottom>
+            Order Summary
+          </Typography>
+          {cart.map((item) => (
+            <Card key={item.productId} sx={{ display: 'flex', mb: 2, p: 2 }}>
+              <Box sx={{ width: 100, height: 100, mr: 2 }}>
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle1">{item.title}</Typography>
+                <Typography color="primary">${item.price}</Typography>
+                <Typography color="text.secondary">Qty: {item.quantity}</Typography>
+              </Box>
+            </Card>
+          ))}
+        </Grid>
+
+        {/* Right Column - Shipping + Submit */}
+        <Grid item xs={12} md={5}>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Shipping Information
               </Typography>
+
+              <TextField
+                label="Email"
+                type="email"
+                value={userData.email}
+                fullWidth
+                disabled
+                margin="normal"
+              />
+
+              <TextField
+                label="Shipping Address"
+                multiline
+                rows={4}
+                value={userData.shippingAddress}
+                onChange={(e) => setUserData({ ...userData, shippingAddress: e.target.value })}
+                fullWidth
+                required
+                margin="normal"
+              />
+
+              <Divider sx={{ my: 3 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                  Total: ${getCartTotal().toFixed(2)}
+                </Typography>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Placing Order...' : 'Place Order'}
+                </Button>
+              </Box>
             </Box>
-          </Card>
-        ))}
-      </Box>
-
-      {/* Checkout Form */}
-      <form onSubmit={handleSubmit}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Shipping Information
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Email"
-              type="email"
-              value={userData.email}
-              disabled
-              fullWidth
-            />
-            <TextField
-              label="Shipping Address"
-              multiline
-              rows={3}
-              value={userData.shippingAddress}
-              onChange={(e) => setUserData({ ...userData, shippingAddress: e.target.value })}
-              required
-              fullWidth
-              disabled
-              placeholder="Enter your full shipping address"
-            />
-          </Box>
-        </Box>
-
-        {/* Total and Submit */}
-        <Box sx={{
-          p: 3,
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <Typography variant="h5">
-            Total: ${getCartTotal().toFixed(2)}
-          </Typography>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Processing...' : 'Place Order'}
-          </Button>
-        </Box>
-      </form>
+          </form>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

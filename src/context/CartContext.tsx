@@ -31,7 +31,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Initialize cart on mount and token change
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {

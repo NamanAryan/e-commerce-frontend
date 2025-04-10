@@ -50,7 +50,7 @@ const CategoryPage = () => {
   };
 
   const handleCategoryClick = (categoryId: number) => {
-    navigate(`/products?category=${categoryId}`);
+    navigate(`/category/${categoryId}`);
   };
   
   return (

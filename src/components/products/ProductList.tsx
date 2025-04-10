@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle, ShoppingCart, Loader } from "lucide-react";
+import { useCart } from "../../context/CartContext";
 
 interface Product {
   id: number;
@@ -50,10 +51,14 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       setStatus('loading');
       
       // Wait for the add to cart function to complete
-      await onClick(productId);
+      const success = await onClick(productId);
       
-      // Show success state
-      setStatus('success');
+      if (success) {
+        // Show success state
+        setStatus('success');
+      } else {
+        setStatus('idle');
+      }
     } catch (error) {
       // If there was an error, go back to idle state
       setStatus('idle');
@@ -93,6 +98,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
 const ProductList = () => {
   const navigate = useNavigate();
+  const { addToCart: addToCartContext } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -148,22 +154,34 @@ const ProductList = () => {
     }).format(price);
   };
   
-  const addToCart = async (_productId: number): Promise<boolean> => {
-    // Simulate API request with a small delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // In a real application, you would have an actual API call here
-    // For example:
-    // const response = await fetch('/api/cart/add', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ productId, quantity: 1 })
-    // });
-    // const data = await response.json();
-    // return data.success;
-    
-    // For now, we'll just return true to simulate success
-    return true;
+  // Updated addToCart function that connects to your CartContext
+  const addToCart = async (productId: number): Promise<boolean> => {
+    try {
+      // Find the product in our products array
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        console.error("Product not found:", productId);
+        return false;
+      }
+      
+      // Create the cart item object in the format expected by the CartContext
+      const cartItem = {
+        productId: productId.toString(), // Convert to string as expected by your model
+        title: product.title,
+        image: product.image,
+        quantity: 1, // Default quantity when adding to cart
+        price: product.price
+      };
+      
+      // Call the addToCart function from your CartContext
+      await addToCartContext(cartItem);
+      
+      return true;
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      return false;
+    }
   };
 
   return (
