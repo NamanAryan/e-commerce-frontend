@@ -14,7 +14,7 @@ import { SearchProvider } from "./context/SearchContext";
 import { CartProvider } from "./context/CartContext";
 import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Cart from "./components/cart/CartPage";
 import CategoryPage from "./components/categories/CategoryPage";
 import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
@@ -23,8 +23,6 @@ import CheckoutPage from "./components/checkout/CheckoutPage";
 import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
 import FavoritePage from "./components/cart/favoritesPage";
-import { pingServer } from './context/api'
-import React from 'react';
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -49,74 +47,32 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   return <>{children}</>;
 };
 
-// Convert to class-based error boundary that can catch rendering errors
-interface ErrorBoundaryState {
-  hasError: boolean;
-}
+const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [hasError, setHasError] = useState(false);
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  ErrorBoundaryState
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
+  useEffect(() => {
+    const handleError = () => setHasError(true);
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) {
+    return <div>Something went wrong. Please try again later.</div>;
   }
 
-  static getDerivedStateFromError(_error: any) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Application crashed:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-            <p className="text-gray-600 mb-4">
-              We're sorry, but something went wrong with the application. 
-              Please try refreshing the page.
-            </p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+  return <>{children}</>;
+};
 
 // Main App Component
 const App = () => {
-  useEffect(() => {
-    // Initial ping when app loads
-    pingServer();
-    
-    // Set up interval for pinging
-    const intervalId = setInterval(() => {
-      pingServer();
-    }, 10 * 60 * 1000); // 10 minutes
-    
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
-  }, []);
-
   return (
-    <ErrorBoundary>
-      <Router>
-        <CartProvider>
-          <SearchProvider>
-            <Layout>
+    <Router>
+      <CartProvider>
+        <SearchProvider>
+          <Layout>
+            <ErrorBoundary>
               <Routes>
                 <Route
                   path="/login"
@@ -165,11 +121,11 @@ const App = () => {
                 {/* Catch all route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Layout>
-          </SearchProvider>
-        </CartProvider>
-      </Router>
-    </ErrorBoundary>
+            </ErrorBoundary>
+          </Layout>
+        </SearchProvider>
+      </CartProvider>
+    </Router>
   );
 };
 

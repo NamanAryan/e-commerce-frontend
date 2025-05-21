@@ -1,47 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from '../../context/CartContext';
-import axios from 'axios';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cart, removeFromCart, updateQuantity, getCartTotal, clearAllCart, refreshCart } = useCart() as unknown as {
+  const { cart, removeFromCart, updateQuantity, getCartTotal, clearAllCart } = useCart() as unknown as {
     cart: { productId: number; image: string; title: string; price: number; quantity: number }[];
     removeFromCart: (id: string) => void;
     updateQuantity: (id: string, quantity: number) => void;
     getCartTotal: () => number;
     clearAllCart: () => void;
-    refreshCart: () => Promise<void>;
   };
   const [isAnimating, setIsAnimating] = useState<{ [key: number]: boolean }>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Initialize backend ping on mount
-  useEffect(() => {
-    // Create a ping function to keep backend awake
-    const keepBackendAlive = () => {
-      setInterval(() => {
-        axios.get('https://e-commerce-hfbs.onrender.com/api/health')
-          .catch(err => console.log('Ping error (can be ignored):', err));
-      }, 10 * 60 * 1000); // 10 minutes
-    };
-
-    keepBackendAlive();
-    
-    // Try to refresh cart on component mount
-    const tryRefreshCart = async () => {
-      setIsLoading(true);
-      try {
-        await refreshCart();
-      } catch (error) {
-        console.error('Failed to refresh cart:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    tryRefreshCart();
-  }, [refreshCart]);
 
   // Format price to currency
   const formatPrice = (price: number) => {
@@ -64,30 +34,6 @@ const Cart = () => {
     }
   };
 
-  useEffect(() => {
-    // Import and use the api.keepBackendAlive from your context
-    const { keepBackendAlive } = require('../../context/api');
-    keepBackendAlive();
-    
-    // Try to refresh cart on component mount with debounce
-    let refreshTimeout;
-    const tryRefreshCart = async () => {
-      setIsLoading(true);
-      try {
-        await refreshCart();
-      } catch (error) {
-        console.error('Failed to refresh cart:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    clearTimeout(refreshTimeout);
-    refreshTimeout = setTimeout(tryRefreshCart, 500);
-    
-    return () => clearTimeout(refreshTimeout);
-  }, []);
-
   const handleRemoveItem = (productId: number) => {
     // Animate before removal
     setIsAnimating(prev => ({ ...prev, [productId]: true }));
@@ -106,10 +52,9 @@ const Cart = () => {
               Your Shopping Cart
             </h1>
             <p className="mt-3 text-lg">
-              {isLoading ? "Loading your cart..." : 
-                cart.length > 0 
-                  ? `You have ${cart.length} item${cart.length > 1 ? 's' : ''} in your cart`
-                  : "Your cart is empty"}
+              {cart.length > 0 
+                ? `You have ${cart.length} item${cart.length > 1 ? 's' : ''} in your cart`
+                : "Your cart is empty"}
             </p>
           </div>
         </div>
@@ -122,17 +67,7 @@ const Cart = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg shadow-md">
-            <div className="text-indigo-600 animate-spin mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-medium text-gray-900">Loading your cart</h2>
-            <p className="text-gray-600 mt-2">Please wait while we fetch your cart items...</p>
-          </div>
-        ) : cart.length > 0 ? (
+        {cart.length > 0 ? (
           <div className="space-y-4">
             {/* Cart Items */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
