@@ -1,5 +1,6 @@
 // src/context/CartContext.tsx
 import { createContext, useContext, useState, useEffect, ReactNode, Key } from "react";
+import api from './api'; // Import your API instance
 
 interface CartItem {
   id?: Key | null | undefined;  
@@ -21,6 +22,7 @@ interface CartContextType {
   clearCart: () => void;
   getMyCart: () => Promise<void>;
   clearAllCart: () => Promise<void>;
+  refreshCart: () => Promise<any>; // Added refreshCart to interface
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -31,7 +33,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Initialize backend keep-alive on component mount
   useEffect(() => {
+    // Import here to avoid circular dependencies
+    const { keepBackendAlive } = require('./api');
+    keepBackendAlive();
+    
     const token = localStorage.getItem("token");
     if (token) {
       getMyCart();
@@ -57,6 +64,27 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     alert(errorMessage); // Using alert instead of toast for now
   };
 
+  const refreshCart = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/cart/my_cart');
+      
+      if (response.data.success && response.data.cart?.items) {
+        setCart(response.data.cart.items);
+      } else {
+        setCart([]);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error refreshing cart:', error);
+      handleApiError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -70,22 +98,18 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getMyCart = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/cart/my_cart`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch cart");
-      }
-
-      const data = await response.json();
-      if (data.success && data.cart?.items) {
-        setCart(data.cart.items);
+      setLoading(true);
+      const response = await api.get('/cart/my_cart');
+      
+      if (response.data.success && response.data.cart?.items) {
+        setCart(response.data.cart.items);
       } else {
         setCart([]);
       }
     } catch (error) {
       handleApiError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,15 +117,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     try {
       // Get current cart
-      const currentCartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
-        headers: getAuthHeaders(),
-      });
+      const currentCartResponse = await api.get('/cart/my_cart');
 
-      if (!currentCartResponse.ok) {
-        throw new Error("Failed to fetch current cart");
-      }
-
-      const currentCartData = await currentCartResponse.json();
+      const currentCartData = currentCartResponse.data;
       const currentItems = currentCartData.success && currentCartData.cart 
         ? currentCartData.cart.items 
         : [];
@@ -132,19 +150,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       );
 
       // Update cart on server
-      const response = await fetch(`${API_BASE_URL}/cart/add_cart`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          items: updatedItems,
-          totalPrice,
-        }),
+      await api.post('/cart/add_cart', {
+        items: updatedItems,
+        totalPrice,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add to cart");
-      }
 
       await getMyCart();
       console.log("Item added to cart successfully");
@@ -158,15 +167,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const removeFromCart = async (productId: string) => {
     setLoading(true);
     try {
-      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
-        headers: getAuthHeaders(),
-      });
+      const cartResponse = await api.get('/cart/my_cart');
 
-      if (!cartResponse.ok) {
-        throw new Error("Failed to fetch cart");
-      }
-
-      const cartData = await cartResponse.json();
+      const cartData = cartResponse.data;
       if (!cartData.success || !cartData.cart) {
         throw new Error("Cart not found");
       }
@@ -180,21 +183,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         0
       );
 
-      const response = await fetch(
-        `${API_BASE_URL}/cart/delete_cart/${cartData.cart._id}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            items: updatedItems,
-            totalPrice: updatedTotalPrice,
-          }),
+      await api.delete(`/cart/delete_cart/${cartData.cart._id}`, {
+        data: {
+          items: updatedItems,
+          totalPrice: updatedTotalPrice,
         }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to remove item");
-      }
+      });
 
       setCart(updatedItems);
       console.log("Item removed from cart");
@@ -213,15 +207,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     setLoading(true);
     try {
-      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
-        headers: getAuthHeaders(),
-      });
+      const cartResponse = await api.get('/cart/my_cart');
 
-      if (!cartResponse.ok) {
-        throw new Error("Failed to fetch cart");
-      }
-
-      const cartData = await cartResponse.json();
+      const cartData = cartResponse.data;
       if (!cartData.success || !cartData.cart) {
         throw new Error("Cart not found");
       }
@@ -237,21 +225,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         0
       );
 
-      const response = await fetch(
-        `${API_BASE_URL}/cart/update_cart/${cartData.cart._id}`,
-        {
-          method: "PATCH",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            items: updatedItems,
-            totalPrice: updatedTotalPrice,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update quantity");
-      }
+      await api.patch(`/cart/update_cart/${cartData.cart._id}`, {
+        items: updatedItems,
+        totalPrice: updatedTotalPrice,
+      });
 
       setCart(updatedItems);
       console.log("Cart updated");
@@ -265,26 +242,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const clearAllCart = async () => {
     setLoading(true);
     try {
-      const cartResponse = await fetch(`${API_BASE_URL}/cart/my_cart`, {
-        headers: getAuthHeaders(),
-      });
+      const cartResponse = await api.get('/cart/my_cart');
 
-      const cartData = await cartResponse.json();
+      const cartData = cartResponse.data;
       if (!cartData.success || !cartData.cart) {
         throw new Error("Cart not found");
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/cart/delete_cart/${cartData.cart._id}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to clear cart");
-      }
+      await api.delete(`/cart/delete_cart/${cartData.cart._id}`);
 
       setCart([]);
       console.log("Cart cleared");
@@ -312,6 +277,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         clearCart,
         getMyCart,
         clearAllCart,
+        refreshCart  // Added refreshCart to the context
       }}
     >
       {children}

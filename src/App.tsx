@@ -23,6 +23,7 @@ import CheckoutPage from "./components/checkout/CheckoutPage";
 import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
 import FavoritePage from "./components/cart/favoritesPage";
+import keepBackendAlive from './context/api';
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -34,6 +35,12 @@ const isTokenValid = (token: string | null): boolean => {
     return false;
   }
 };
+
+// Keep the backend alive to prevent it from sleeping
+useEffect(() => {
+  keepBackendAlive({ method: "GET", url: "/ping" });
+}
+, []);
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
