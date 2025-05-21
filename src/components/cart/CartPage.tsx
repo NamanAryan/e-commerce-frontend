@@ -64,6 +64,32 @@ const Cart = () => {
     }
   };
 
+  useEffect(() => {
+    // Import and use the api.keepBackendAlive from your context
+    import('../../context/api').then(({ keepBackendAlive }) => {
+      const cleanupPing = keepBackendAlive();
+      return () => cleanupPing(); // Cleanup on unmount
+    });
+    
+    // Try to refresh cart on component mount with debounce
+    let refreshTimeout;
+    const tryRefreshCart = async () => {
+      setIsLoading(true);
+      try {
+        await refreshCart();
+      } catch (error) {
+        console.error('Failed to refresh cart:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(tryRefreshCart, 500);
+    
+    return () => clearTimeout(refreshTimeout);
+  }, []);
+
   const handleRemoveItem = (productId: number) => {
     // Animate before removal
     setIsAnimating(prev => ({ ...prev, [productId]: true }));
