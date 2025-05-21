@@ -23,7 +23,7 @@ import CheckoutPage from "./components/checkout/CheckoutPage";
 import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
 import FavoritePage from "./components/cart/favoritesPage";
-import keepBackendAlive from './context/api';
+import { startKeepAliveInterval } from './context/api';
 import React from 'react';
 
 const isTokenValid = (token: string | null): boolean => {
@@ -100,7 +100,9 @@ class ErrorBoundary extends React.Component<
 const App = () => {
   // Move the useEffect inside the component
   useEffect(() => {
-    keepBackendAlive({ method: "GET", url: "/ping" });
+    // Use the new function name
+    const cleanup = startKeepAliveInterval();
+    return cleanup;
   }, []);
 
   return (

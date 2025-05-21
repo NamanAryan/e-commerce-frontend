@@ -1,6 +1,6 @@
 // src/context/CartContext.tsx
 import { createContext, useContext, useState, useEffect, ReactNode, Key } from "react";
-import api from './api'; // Import your API instance
+import api from './api'; // Ensure this is an Axios instance or similar HTTP client
 
 interface CartItem {
   id?: Key | null | undefined;  

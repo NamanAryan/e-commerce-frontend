@@ -66,8 +66,8 @@ const Cart = () => {
 
   useEffect(() => {
     // Import and use the api.keepBackendAlive from your context
-    import('../../context/api').then(({ keepBackendAlive }) => {
-      const cleanupPing = keepBackendAlive();
+    import('../../context/api').then(({ startKeepAliveInterval  }) => {
+      const cleanupPing = startKeepAliveInterval ();
       return () => cleanupPing(); // Cleanup on unmount
     });
     
