@@ -27,7 +27,6 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const API_BASE_URL = "https://e-commerce-hfbs.onrender.com/api";
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -85,16 +84,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Please login to continue");
-    }
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  };
 
   const getMyCart = async () => {
     try {
