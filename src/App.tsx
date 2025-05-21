@@ -14,7 +14,7 @@ import { SearchProvider } from "./context/SearchContext";
 import { CartProvider } from "./context/CartContext";
 import Home from "./components/products/Home";
 import ProductDetails from "./components/products/ProductDetail";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Cart from "./components/cart/CartPage";
 import CategoryPage from "./components/categories/CategoryPage";
 import SpecificCategoryPage from "./components/categories/SpecificCategoryPage";
@@ -24,6 +24,7 @@ import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
 import FavoritePage from "./components/cart/favoritesPage";
 import keepBackendAlive from './context/api';
+import React from 'react';
 
 const isTokenValid = (token: string | null): boolean => {
   if (!token) return false;
@@ -35,12 +36,6 @@ const isTokenValid = (token: string | null): boolean => {
     return false;
   }
 };
-
-// Keep the backend alive to prevent it from sleeping
-useEffect(() => {
-  keepBackendAlive({ method: "GET", url: "/ping" });
-}
-, []);
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -54,32 +49,66 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   return <>{children}</>;
 };
 
-const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [hasError, setHasError] = useState(false);
+// Convert to class-based error boundary that can catch rendering errors
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
 
-  useEffect(() => {
-    const handleError = () => setHasError(true);
-    window.addEventListener("error", handleError);
-    return () => window.removeEventListener("error", handleError);
-  }, []);
-
-  if (hasError) {
-    return <div>Something went wrong. Please try again later.</div>;
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
   }
 
-  return <>{children}</>;
-};
+  static getDerivedStateFromError(_error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Application crashed:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">
+              We're sorry, but something went wrong with the application. 
+              Please try refreshing the page.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Main App Component
 const App = () => {
+  // Move the useEffect inside the component
+  useEffect(() => {
+    keepBackendAlive({ method: "GET", url: "/ping" });
+  }, []);
+
   return (
-    <Router>
-      <CartProvider>
-        <SearchProvider>
-          <Layout>
-            <ErrorBoundary>
+    <ErrorBoundary>
+      <Router>
+        <CartProvider>
+          <SearchProvider>
+            <Layout>
               <Routes>
                 <Route
                   path="/login"
@@ -128,11 +157,11 @@ const App = () => {
                 {/* Catch all route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </ErrorBoundary>
-          </Layout>
-        </SearchProvider>
-      </CartProvider>
-    </Router>
+            </Layout>
+          </SearchProvider>
+        </CartProvider>
+      </Router>
+    </ErrorBoundary>
   );
 };
 
