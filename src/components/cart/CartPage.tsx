@@ -66,10 +66,8 @@ const Cart = () => {
 
   useEffect(() => {
     // Import and use the api.keepBackendAlive from your context
-    import('../../context/api').then(({ startKeepAliveInterval  }) => {
-      const cleanupPing = startKeepAliveInterval ();
-      return () => cleanupPing(); // Cleanup on unmount
-    });
+    const { keepBackendAlive } = require('../../context/api');
+    keepBackendAlive();
     
     // Try to refresh cart on component mount with debounce
     let refreshTimeout;

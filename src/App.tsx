@@ -23,7 +23,7 @@ import CheckoutPage from "./components/checkout/CheckoutPage";
 import OrderConfirmation from "./components/checkout/OrderConfirm";
 import OrdersPage from "./components/orders/OrderPage";
 import FavoritePage from "./components/cart/favoritesPage";
-import { startKeepAliveInterval } from './context/api';
+import { pingServer } from './context/api'
 import React from 'react';
 
 const isTokenValid = (token: string | null): boolean => {
@@ -98,11 +98,17 @@ class ErrorBoundary extends React.Component<
 
 // Main App Component
 const App = () => {
-  // Move the useEffect inside the component
   useEffect(() => {
-    // Use the new function name
-    const cleanup = startKeepAliveInterval();
-    return cleanup;
+    // Initial ping when app loads
+    pingServer();
+    
+    // Set up interval for pinging
+    const intervalId = setInterval(() => {
+      pingServer();
+    }, 10 * 60 * 1000); // 10 minutes
+    
+    // Clean up on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
